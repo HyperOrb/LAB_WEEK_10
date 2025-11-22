@@ -3,12 +3,15 @@ package com.example.lab_week_10
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import androidx.room.Room
 import com.example.lab_week_10.database.Total
 import com.example.lab_week_10.database.TotalDatabase
+import com.example.lab_week_10.database.TotalObject
 import com.example.lab_week_10.viewmodels.TotalViewModel
+import java.util.Date
 
 class MainActivity : AppCompatActivity() {
     // Inisialisasi ViewModel secara lazy
@@ -58,15 +61,21 @@ class MainActivity : AppCompatActivity() {
     private fun initializeValueFromDatabase() {
         val totalList = db.totalDao().getTotal(ID)
         if (totalList.isEmpty()) {
-            db.totalDao().insert(Total(id = ID, total = 0))
+            db.totalDao().insert(Total(id = ID, total = TotalObject(value = 0, date = Date().toString())))
         } else {
-            viewModel.setTotal(totalList.first().total)
+            val storedTotalObject = totalList.first().total
+            viewModel.setTotal(storedTotalObject.value)
+            Toast.makeText(this, "Last updated: ${storedTotalObject.date}", Toast.LENGTH_LONG).show()
         }
     }
 
     override fun onPause() {
         super.onPause()
         // Simpan nilai terakhir ke DB
-        db.totalDao().update(Total(ID, viewModel.total.value ?: 0))
+        val currentTotal = viewModel.total.value ?: 0
+        val currentDate = Date().toString()
+        val totalObj = TotalObject(currentTotal, currentDate)
+
+        db.totalDao().update(Total(ID, totalObj))
     }
 }
